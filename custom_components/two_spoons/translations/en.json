@@ -1,0 +1,96 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Two Spoons",
+        "description": "Enter your Two Spoons site address and an API token for Home Assistant.",
+        "data": {
+          "url": "URL",
+          "api_token": "API token"
+        },
+        "data_description": {
+          "url": "Your Two Spoons site address, starting with https://",
+          "api_token": "The Home Assistant token created for your household"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter API token",
+        "description": "The token for {host} was rejected. Enter a new one.",
+        "data": {
+          "api_token": "API token"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Two Spoons",
+        "description": "Change the site address or token. Leave the token blank to keep the current one.",
+        "data": {
+          "url": "URL",
+          "api_token": "API token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Can't reach Two Spoons. Check the URL and your connection.",
+      "invalid_auth": "Token rejected.",
+      "blocked_by_firewall": "Blocked by the Vercel firewall. Try again later.",
+      "invalid_url": "Enter a web address starting with http:// or https://",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Two Spoons site is already set up.",
+      "reauth_successful": "Re-authentication successful.",
+      "reconfigure_successful": "Two Spoons was reconfigured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Two Spoons options",
+        "data": {
+          "poll_minutes": "Polling interval (minutes)"
+        },
+        "data_description": {
+          "poll_minutes": "How often to fetch the lists. Changes made from Home Assistant refresh straight away."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_auth": {
+      "message": "Two Spoons rejected the API token. Re-enter it to continue."
+    },
+    "blocked_by_firewall": {
+      "message": "Two Spoons is blocked by the Vercel firewall. Try again later."
+    },
+    "cannot_connect": {
+      "message": "Can't reach Two Spoons."
+    },
+    "no_shopping_week": {
+      "message": "Two Spoons has no shopping week right now."
+    },
+    "ready_meal_read_only": {
+      "message": "Ready Meals days can be ticked here, but only renamed or removed in Two Spoons."
+    },
+    "ready_meals_not_removed": {
+      "message": "{count} Ready Meals day(s) weren't removed: {items}. Ready Meals days can only be removed in Two Spoons."
+    },
+    "item_not_found": {
+      "message": "That item no longer exists in Two Spoons."
+    },
+    "api_error": {
+      "message": "Two Spoons rejected the change ({code})."
+    },
+    "not_loaded": {
+      "message": "Two Spoons isn't set up or isn't loaded."
+    },
+    "refresh_failed": {
+      "message": "Couldn't refresh Two Spoons."
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Fetches the shopping lists from Two Spoons now."
+    }
+  }
+}

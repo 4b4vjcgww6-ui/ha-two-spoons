@@ -1,0 +1,7 @@
+{
+  "today": "2030-01-04",
+  "shoppingWeekId": "00000000-0000-4000-8000-00000000aa01",
+  "shoppingWeekStart": "2030-01-05",
+  "currentWeek": { "id": "00000000-0000-4000-8000-00000000aa00", "startDate": "2029-12-29", "status": "current", "woolworthsStatus": "ordered" },
+  "upcomingWeek": { "id": "00000000-0000-4000-8000-00000000aa01", "startDate": "2030-01-05", "status": "upcoming", "woolworthsStatus": null }
+}

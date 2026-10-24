@@ -1,0 +1,32 @@
+{
+  "weekId": "00000000-0000-4000-8000-00000000aa01",
+  "weekStart": "2030-01-05",
+  "version": "v1-example",
+  "stores": [
+    {
+      "code": "GG",
+      "name": "Green Grocer",
+      "items": [
+        { "id": "00000000-0000-4000-8000-000000000101", "summary": "Apples — 6", "status": "needs_action", "description": "Fruit & Veg" },
+        { "id": "00000000-0000-4000-8000-000000000102", "summary": "Spinach", "status": "completed", "description": "Fruit & Veg" }
+      ]
+    },
+    {
+      "code": "WW",
+      "name": "Woolies",
+      "items": [
+        { "id": "00000000-0000-4000-8000-000000000201", "summary": "Oat milk — 2 L", "status": "needs_action", "description": "Dairy" },
+        { "id": "00000000-0000-4000-8000-000000000202", "summary": "Ready Meals · Monday 7th", "status": "completed", "description": "Ready Meals" },
+        { "id": "00000000-0000-4000-8000-000000000203", "summary": "Ready Meals · Tuesday 8th", "status": "completed", "description": "Ready Meals" },
+        { "id": "00000000-0000-4000-8000-000000000204", "summary": "Rice", "status": "completed", "description": "Pantry" }
+      ]
+    },
+    {
+      "code": "BK",
+      "name": "Bakery",
+      "items": [
+        { "id": "00000000-0000-4000-8000-000000000301", "summary": "Sourdough", "status": "needs_action", "description": "Bakery" }
+      ]
+    }
+  ]
+}

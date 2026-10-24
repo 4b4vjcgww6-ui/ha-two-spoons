@@ -1,0 +1,13 @@
+{
+  "domain": "two_spoons",
+  "name": "Two Spoons",
+  "codeowners": ["@4b4vjcgww6-ui"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/4b4vjcgww6-ui/ha-two-spoons",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/4b4vjcgww6-ui/ha-two-spoons/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
