@@ -95,5 +95,71 @@
       "name": "Refresh",
       "description": "Fetches the shopping lists from Two Spoons now."
     }
+  },
+  "entity": {
+    "calendar": {
+      "meals": {
+        "name": "Meals"
+      }
+    },
+    "sensor": {
+      "week_status": {
+        "name": "Week status",
+        "state": {
+          "not_started": "Not started",
+          "partial": "Partly planned",
+          "planned": "Planned"
+        },
+        "state_attributes": {
+          "nights_planned": {
+            "name": "Nights planned"
+          },
+          "nights_total": {
+            "name": "Nights total"
+          },
+          "shopping_week_start": {
+            "name": "Shopping week start"
+          },
+          "shopping_week_exists": {
+            "name": "Shopping week exists"
+          },
+          "tonight": {
+            "name": "Tonight"
+          }
+        }
+      },
+      "woolies_order": {
+        "name": "Woolies order",
+        "state": {
+          "not_placed": "Not placed",
+          "exported": "Exported",
+          "placed": "Placed",
+          "pickup_today": "Pickup today"
+        },
+        "state_attributes": {
+          "order_date": {
+            "name": "Order date"
+          },
+          "collection_date": {
+            "name": "Collection date"
+          },
+          "item_count": {
+            "name": "Item count"
+          },
+          "items_remaining": {
+            "name": "Items remaining"
+          },
+          "week_start": {
+            "name": "Week start"
+          }
+        }
+      }
+    }
+  },
+  "issues": {
+    "blocked_by_firewall": {
+      "title": "Two Spoons is blocked by the Vercel firewall",
+      "description": "Requests from Home Assistant to Two Spoons were challenged by the site's firewall. Home Assistant will try again in 15 minutes; this notice clears itself once a request gets through. If it keeps happening, check the firewall rule that lets the Home Assistant API through."
+    }
   }
 }

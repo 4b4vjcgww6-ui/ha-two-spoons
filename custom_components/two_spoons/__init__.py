@@ -1,4 +1,4 @@
-"""The Two Spoons integration: one to-do list per store."""
+"""The Two Spoons integration: store to-do lists, a meals calendar and week sensors."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .api import TwoSpoonsClient
 from .const import CONF_API_TOKEN, DOMAIN
 from .coordinator import TwoSpoonsConfigEntry, TwoSpoonsCoordinator
 
-PLATFORMS: list[Platform] = [Platform.TODO]
+PLATFORMS: list[Platform] = [Platform.CALENDAR, Platform.SENSOR, Platform.TODO]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 

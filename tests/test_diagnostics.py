@@ -26,3 +26,7 @@ async def test_diagnostics(hass: HomeAssistant, setup_integration: MockConfigEnt
     assert TOKEN not in dumped
     assert "Apples" not in dumped
     assert "Ready Meals" not in dumped
+    assert diag["meals"] == {"nights": 14, "planned": 7, "baking": 1, "version": "meals-v1-example"}
+    assert diag["status"] == {"nights_planned": 6, "woolies_status": "exported"}
+    assert "Roast chicken" not in dumped
+    assert "Lemon cake" not in dumped

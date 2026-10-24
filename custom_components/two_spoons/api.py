@@ -79,6 +79,70 @@ class ShoppingLists:
     stores: dict[str, StoreList]
 
 
+@dataclass(frozen=True, slots=True)
+class MealNight:
+    """One night from GET /meals. Unplanned nights have kind and label None."""
+
+    date: str
+    week_start: str
+    planned: bool
+    kind: str | None
+    label: str | None
+    method: str | None
+    prep_note: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class MealBaking:
+    """A week's weekend baking slot."""
+
+    week_start: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True)
+class Meals:
+    """GET /meals: 14 nights from the eating week's Saturday, plus baking."""
+
+    today: str
+    timezone: str
+    shopping_week_start: str
+    version: str
+    nights: tuple[MealNight, ...]
+    baking: tuple[MealBaking, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class WeekStatus:
+    """GET /status → weekStatus (counts the shopping week)."""
+
+    shopping_week_start: str
+    nights_planned: int
+    nights_total: int
+    tonight: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class WooliesOrder:
+    """GET /status → woolworthsOrder (the shopping week's order)."""
+
+    week_start: str
+    status: str
+    order_date: str | None
+    collection_date: str | None
+    item_count: int | None
+    items_remaining: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class Status:
+    """The parts of GET /status the integration uses."""
+
+    today: str
+    week: WeekStatus
+    woolies: WooliesOrder
+
+
 def normalize_base_url(raw: str) -> str:
     """Return the site's base URL from what the user typed.
 
@@ -120,6 +184,61 @@ def _parse_lists(body: Any) -> ShoppingLists:
         )
     except (KeyError, TypeError) as err:
         raise TwoSpoonsConnectionError("unexpected /lists response") from err
+
+
+def _parse_meals(body: Any) -> Meals:
+    try:
+        nights = []
+        for n in body["nights"]:
+            recipe = n.get("recipe") or {}
+            nights.append(
+                MealNight(
+                    date=n["date"],
+                    week_start=n["weekStart"],
+                    planned=bool(n["planned"]),
+                    kind=n["kind"],
+                    label=n["label"],
+                    method=recipe.get("method"),
+                    prep_note=recipe.get("prepNote"),
+                )
+            )
+        return Meals(
+            today=body["today"],
+            timezone=body["timezone"],
+            shopping_week_start=body["shoppingWeekStart"],
+            version=body["version"],
+            nights=tuple(nights),
+            baking=tuple(
+                MealBaking(week_start=b["weekStart"], label=b["label"]) for b in body["baking"]
+            ),
+        )
+    except (KeyError, TypeError) as err:
+        raise TwoSpoonsConnectionError("unexpected /meals response") from err
+
+
+def _parse_status(body: Any) -> Status:
+    try:
+        ws = body["weekStatus"]
+        wo = body["woolworthsOrder"]
+        return Status(
+            today=body["today"],
+            week=WeekStatus(
+                shopping_week_start=ws["shoppingWeekStart"],
+                nights_planned=int(ws["nightsPlanned"]),
+                nights_total=int(ws["nightsTotal"]),
+                tonight=(ws.get("tonight") or {}).get("label"),
+            ),
+            woolies=WooliesOrder(
+                week_start=wo["weekStart"],
+                status=wo["status"],
+                order_date=wo["orderDate"],
+                collection_date=wo["collectionDate"],
+                item_count=wo["itemCount"],
+                items_remaining=wo["itemsRemaining"],
+            ),
+        )
+    except (KeyError, TypeError, ValueError) as err:
+        raise TwoSpoonsConnectionError("unexpected /status response") from err
 
 
 class TwoSpoonsClient:
@@ -180,6 +299,14 @@ class TwoSpoonsClient:
     async def async_get_lists(self) -> ShoppingLists:
         """GET /lists: one list per active store for the shopping week."""
         return _parse_lists(await self._request("GET", "/lists"))
+
+    async def async_get_meals(self) -> Meals:
+        """GET /meals: this week's and next week's nights."""
+        return _parse_meals(await self._request("GET", "/meals"))
+
+    async def async_get_week_status(self) -> Status:
+        """GET /status, parsed (async_get_status returns the raw body)."""
+        return _parse_status(await self._request("GET", "/status"))
 
     async def async_create_item(self, store_code: str, text: str) -> None:
         """POST /items into one store (may merge into an existing item)."""

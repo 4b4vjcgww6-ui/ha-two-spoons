@@ -40,6 +40,12 @@ def lists_json() -> dict[str, Any]:
 
 
 @pytest.fixture
+def meals_json() -> dict[str, Any]:
+    """GET /meals response."""
+    return load_fixture("meals.json")
+
+
+@pytest.fixture
 def status_json() -> dict[str, Any]:
     """GET /status response."""
     return load_fixture("status.json")
@@ -58,10 +64,37 @@ def mock_entry(hass: HomeAssistant) -> MockConfigEntry:
     return entry
 
 
-def mock_lists(aioclient_mock: AiohttpClientMocker, body: Any = None, **kwargs: Any) -> None:
-    """Make GET /lists answer with this (replacing every registered mock)."""
+def mock_lists(
+    aioclient_mock: AiohttpClientMocker,
+    body: Any = None,
+    *,
+    meals_body: Any = None,
+    status_body: Any = None,
+    meals_kwargs: dict[str, Any] | None = None,
+    status_kwargs: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> None:
+    """Make a poll answer with these (replacing every registered mock).
+
+    GET /lists answers with `body`/kwargs; /meals and /status answer with
+    the fixtures unless overridden.
+    """
     aioclient_mock.clear_requests()
     aioclient_mock.get(f"{API}/lists", json=body, **kwargs)
+    aioclient_mock.get(
+        f"{API}/meals",
+        json=load_fixture("meals.json") if meals_body is None else meals_body,
+        **(meals_kwargs or {}),
+    )
+    aioclient_mock.get(
+        f"{API}/status",
+        json=load_fixture("status.json") if status_body is None else status_body,
+        **(status_kwargs or {}),
+    )
+
+
+# The requests one poll makes, in order.
+POLL = [("get", "/lists", None), ("get", "/meals", None), ("get", "/status", None)]
 
 
 @pytest.fixture

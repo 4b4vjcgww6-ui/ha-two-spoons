@@ -1,7 +1,34 @@
 {
-  "today": "2030-01-04",
+  "today": "2030-01-05",
   "shoppingWeekId": "00000000-0000-4000-8000-00000000aa01",
   "shoppingWeekStart": "2030-01-05",
-  "currentWeek": { "id": "00000000-0000-4000-8000-00000000aa00", "startDate": "2029-12-29", "status": "current", "woolworthsStatus": "ordered" },
-  "upcomingWeek": { "id": "00000000-0000-4000-8000-00000000aa01", "startDate": "2030-01-05", "status": "upcoming", "woolworthsStatus": null }
+  "currentWeek": {
+    "id": "00000000-0000-4000-8000-00000000aa01",
+    "startDate": "2030-01-05",
+    "status": "current",
+    "woolworthsStatus": "exported"
+  },
+  "upcomingWeek": null,
+  "weekStatus": {
+    "eatingWeekStart": "2030-01-05",
+    "shoppingWeekStart": "2030-01-05",
+    "shoppingWeekExists": true,
+    "nightsPlanned": 6,
+    "nightsTotal": 7,
+    "tonight": {
+      "date": "2030-01-05",
+      "planned": true,
+      "kind": "recipe",
+      "label": "Roast chicken"
+    }
+  },
+  "woolworthsOrder": {
+    "weekId": "00000000-0000-4000-8000-00000000aa01",
+    "weekStart": "2030-01-05",
+    "status": "exported",
+    "orderDate": "2030-01-04",
+    "collectionDate": "2030-01-05",
+    "itemCount": 4,
+    "itemsRemaining": 1
+  }
 }

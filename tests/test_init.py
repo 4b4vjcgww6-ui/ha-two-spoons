@@ -33,7 +33,7 @@ async def test_user_agent_has_version(
 ) -> None:
     """User-Agent is HomeAssistant-TwoSpoons/<manifest version>."""
     _, _, _, headers = aioclient_mock.mock_calls[0]
-    assert headers["User-Agent"] == "HomeAssistant-TwoSpoons/0.1.0"
+    assert headers["User-Agent"] == "HomeAssistant-TwoSpoons/0.2.0"
 
 
 async def test_setup_401_starts_reauth(
@@ -112,17 +112,17 @@ async def test_poll_interval(
     mock_lists(aioclient_mock, lists_json)
     await hass.config_entries.async_setup(mock_entry.entry_id)
     await hass.async_block_till_done()
-    assert aioclient_mock.call_count == 1
+    assert aioclient_mock.call_count == 3  # /lists, /meals, /status
 
     freezer.tick(timedelta(minutes=2))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
-    assert aioclient_mock.call_count == 1
+    assert aioclient_mock.call_count == 3
 
     freezer.tick(timedelta(minutes=1, seconds=1))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
-    assert aioclient_mock.call_count == 2
+    assert aioclient_mock.call_count == 6
 
 
 async def test_default_poll_interval(
@@ -150,7 +150,7 @@ async def test_refresh_service(
     )
     mock_lists(aioclient_mock, lists_json)
     await hass.services.async_call(DOMAIN, "refresh", blocking=True)
-    assert aioclient_mock.call_count == 1
+    assert aioclient_mock.call_count == 3
     assert hass.states.get(entity_id).state == "2"
 
 

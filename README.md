@@ -11,8 +11,19 @@ and remove items from Home Assistant, Assist and automations.
   category as the description.
 - **Add, tick, untick, rename and remove** items. Adds go through Two Spoons'
   Quick Add, so quantities are understood and duplicates are merged.
-- **`two_spoons.refresh`**, an action that fetches the lists straight away, for
-  example when you arrive at a store.
+- **A "Meals" calendar** with one all-day event per planned dinner for this
+  week and next, plus weekend baking across Saturday and Sunday. The
+  calendar's state is tonight's dinner (off when nothing is planned).
+  Event descriptions list `kind:`, and `method:` / `prep:` when the recipe has
+  them. Read-only.
+- **A "Week status" sensor**: `not_started` (no dinners planned in the
+  shopping week, or no shopping week yet), `partial` (1–6) or `planned` (7),
+  with the counts and tonight's dinner as attributes.
+- **A "Woolies order" sensor** for the shopping week's click & collect order:
+  `not_placed`, `exported`, `placed`, or `pickup_today` once placed on
+  collection day (Perth time), with order/collection dates and item counts.
+- **`two_spoons.refresh`**, an action that fetches everything straight away,
+  for example when you arrive at a store.
 - New stores appear automatically. A store that's removed or made inactive in
   Two Spoons shows as unavailable; its list is never deleted for you.
 - The `WW` store is also known to Assist as "Woolworths".
@@ -44,8 +55,9 @@ The integration checks both before saving. If the token is later rejected,
 Home Assistant asks for a new one. To change the URL or token at any time, use
 **Reconfigure** on the integration.
 
-**Options:** polling interval in minutes (default 5, minimum 2). Changes made
-from Home Assistant refresh the lists straight away regardless.
+**Options:** polling interval in minutes (default 5, minimum 2). Each poll
+reads the lists, the meals and the week status. Changes made from Home
+Assistant refresh straight away regardless.
 
 ## Example: refresh when you arrive at a store
 
@@ -64,8 +76,9 @@ automation:
 ## Troubleshooting
 
 - **"Blocked by the Vercel firewall"**: the Two Spoons site's firewall
-  challenged the request. It usually clears by itself; the integration retries
-  at the next poll.
+  challenged a request. A repair notice appears, the integration waits 15
+  minutes before trying again, and the notice clears itself once a request
+  gets through.
 - **Lists unavailable**: there's no shopping week right now, the store is
   inactive, or the site can't be reached. Download diagnostics from the
   integration page; the token is redacted and no item names are included.

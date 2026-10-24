@@ -16,7 +16,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 
 from custom_components.two_spoons.const import DOMAIN
 
-from .conftest import API, mock_lists, todo_entity_id
+from .conftest import API, POLL, mock_lists, todo_entity_id
 
 APPLES = "00000000-0000-4000-8000-000000000101"
 SPINACH = "00000000-0000-4000-8000-000000000102"
@@ -50,7 +50,7 @@ async def test_one_list_per_store(hass: HomeAssistant, setup_integration: MockCo
     """Each store becomes a list on one "Two Spoons" service device."""
     registry = er.async_get(hass)
     entries = er.async_entries_for_config_entry(registry, setup_integration.entry_id)
-    assert sorted(e.unique_id for e in entries) == [
+    assert sorted(e.unique_id for e in entries if e.domain == "todo") == [
         "two_spoons_BK",
         "two_spoons_GG",
         "two_spoons_WW",
@@ -189,7 +189,7 @@ async def test_add_item(
     )
     assert calls(aioclient_mock) == [
         ("post", "/items", {"text": "2 pears", "store": "GG"}),
-        ("get", "/lists", None),
+        *POLL,
     ]
 
 
@@ -232,7 +232,7 @@ async def test_tick_sends_summary_unchanged(
     )
     assert calls(aioclient_mock) == [
         ("patch", f"/items/{APPLES}", {"status": "completed", "text": "Apples — 6"}),
-        ("get", "/lists", None),
+        *POLL,
     ]
 
 
@@ -283,7 +283,7 @@ async def test_rename_ready_meal_day(
         str(exc.value)
         == "Ready Meals days can be ticked here, but only renamed or removed in Two Spoons"
     )
-    assert calls(aioclient_mock)[-1] == ("get", "/lists", None)
+    assert calls(aioclient_mock)[-3:] == POLL
 
 
 async def test_update_missing_item(
@@ -377,7 +377,7 @@ async def test_delete_item(
         target={ATTR_ENTITY_ID: todo_entity_id(hass, "GG")},
         blocking=True,
     )
-    assert calls(aioclient_mock) == [("delete", f"/items/{APPLES}", None), ("get", "/lists", None)]
+    assert calls(aioclient_mock) == [("delete", f"/items/{APPLES}", None), *POLL]
 
 
 async def test_remove_completed_skips_ready_meals(
@@ -412,7 +412,7 @@ async def test_remove_completed_skips_ready_meals(
         ("delete", f"/items/{MONDAY}", None),
         ("delete", f"/items/{TUESDAY}", None),
         ("delete", f"/items/{RICE}", None),
-        ("get", "/lists", None),
+        *POLL,
     ]
 
 
@@ -478,4 +478,4 @@ async def test_bulk_delete_stops_on_connection_error(
             blocking=True,
         )
     assert exc.value.translation_key == "cannot_connect"
-    assert calls(aioclient_mock) == [("delete", f"/items/{MONDAY}", None), ("get", "/lists", None)]
+    assert calls(aioclient_mock) == [("delete", f"/items/{MONDAY}", None), *POLL]

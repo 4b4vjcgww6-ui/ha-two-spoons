@@ -1,4 +1,4 @@
-"""Diagnostics for Two Spoons. The token is redacted; no item text is included."""
+"""Diagnostics for Two Spoons. The token is redacted; no item or meal text is included."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ TO_REDACT = {CONF_API_TOKEN}
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: TwoSpoonsConfigEntry
 ) -> dict[str, Any]:
-    """Entry settings, last poll result and per-store item counts."""
+    """Entry settings, last poll result, and counts only."""
     coordinator = entry.runtime_data
     data = coordinator.data
+    lists, meals, status = data.lists, data.meals, data.status
     return {
         "entry": {
             "data": async_redact_data(dict(entry.data), TO_REDACT),
@@ -29,16 +30,30 @@ async def async_get_config_entry_diagnostics(
         if coordinator.last_exception
         else None,
         "shopping_week": None
-        if data is None
-        else {"week_start": data.week_start, "version": data.version},
+        if lists is None
+        else {"week_start": lists.week_start, "version": lists.version},
         "stores": []
-        if data is None
+        if lists is None
         else [
             {
                 "code": store.code,
                 "items": len(store.items),
                 "completed": sum(item.completed for item in store.items),
             }
-            for store in data.stores.values()
+            for store in lists.stores.values()
         ],
+        "meals": None
+        if meals is None
+        else {
+            "nights": len(meals.nights),
+            "planned": sum(night.planned for night in meals.nights),
+            "baking": len(meals.baking),
+            "version": meals.version,
+        },
+        "status": None
+        if status is None
+        else {
+            "nights_planned": status.week.nights_planned,
+            "woolies_status": status.woolies.status,
+        },
     }

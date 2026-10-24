@@ -10,13 +10,11 @@ from homeassistant.components.todo import (
     TodoListEntity,
     TodoListEntityFeature,
 )
-from homeassistant.const import CONF_URL, Platform
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import (
     StoreList,
@@ -28,6 +26,7 @@ from .api import (
 )
 from .const import DOMAIN, ERR_NOT_FOUND, ERR_READ_ONLY, STORE_ALIASES
 from .coordinator import TwoSpoonsConfigEntry, TwoSpoonsCoordinator
+from .entity import TwoSpoonsEntity
 
 # Writes are sent one at a time, then the coordinator refreshes.
 PARALLEL_UPDATES = 1
@@ -66,9 +65,10 @@ async def async_setup_entry(
 
     @callback
     def _add_new_stores() -> None:
-        if coordinator.data is None:
+        lists = coordinator.data.lists
+        if lists is None:
             return
-        new = [store for code, store in coordinator.data.stores.items() if code not in known]
+        new = [store for code, store in lists.stores.items() if code not in known]
         if not new:
             return
         known.update(store.code for store in new)
@@ -80,10 +80,9 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new_stores))
 
 
-class TwoSpoonsTodoList(CoordinatorEntity[TwoSpoonsCoordinator], TodoListEntity):
+class TwoSpoonsTodoList(TwoSpoonsEntity, TodoListEntity):
     """A store's shopping list for the shopping week."""
 
-    _attr_has_entity_name = True
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
@@ -95,23 +94,16 @@ class TwoSpoonsTodoList(CoordinatorEntity[TwoSpoonsCoordinator], TodoListEntity)
     ) -> None:
         """Set up the list for one store code."""
         super().__init__(coordinator)
-        entry = coordinator.config_entry
         self._code = code
         self._is_new = is_new
         self._attr_unique_id = f"{UNIQUE_ID_PREFIX}{code}"
         self._attr_name = name
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Two Spoons",
-            entry_type=DeviceEntryType.SERVICE,
-            configuration_url=entry.data[CONF_URL],
-        )
         self._sync_from_data()
 
     @property
     def _store(self) -> StoreList | None:
-        data = self.coordinator.data
-        return None if data is None else data.stores.get(self._code)
+        lists = self.coordinator.data.lists
+        return None if lists is None else lists.stores.get(self._code)
 
     @property
     def available(self) -> bool:
