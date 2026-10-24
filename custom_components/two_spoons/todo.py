@@ -233,7 +233,9 @@ class TwoSpoonsTodoList(CoordinatorEntity[TwoSpoonsCoordinator], TodoListEntity)
         if read_only:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
-                translation_key="ready_meals_not_removed",
+                translation_key="ready_meal_day_not_removed"
+                if len(read_only) == 1
+                else "ready_meal_days_not_removed",
                 translation_placeholders={
                     "count": str(len(read_only)),
                     "items": ", ".join(read_only),

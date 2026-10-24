@@ -71,8 +71,11 @@
     "ready_meal_read_only": {
       "message": "Ready Meals days can be ticked here, but only renamed or removed in Two Spoons."
     },
-    "ready_meals_not_removed": {
-      "message": "{count} Ready Meals day(s) weren't removed: {items}. Ready Meals days can only be removed in Two Spoons."
+    "ready_meal_day_not_removed": {
+      "message": "1 Ready Meals day wasn't removed: {items}. Ready Meals days can only be removed in Two Spoons."
+    },
+    "ready_meal_days_not_removed": {
+      "message": "{count} Ready Meals days weren't removed: {items}. Ready Meals days can only be removed in Two Spoons."
     },
     "item_not_found": {
       "message": "That item no longer exists in Two Spoons."

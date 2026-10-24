@@ -402,9 +402,9 @@ async def test_remove_completed_skips_ready_meals(
             target={ATTR_ENTITY_ID: todo_entity_id(hass, "WW")},
             blocking=True,
         )
-    assert exc.value.translation_key == "ready_meals_not_removed"
+    assert exc.value.translation_key == "ready_meal_days_not_removed"
     assert str(exc.value) == (
-        "2 Ready Meals day(s) weren't removed: "
+        "2 Ready Meals days weren't removed: "
         "Ready Meals · Monday 7th, Ready Meals · Tuesday 8th. "
         "Ready Meals days can only be removed in Two Spoons"
     )
@@ -414,6 +414,32 @@ async def test_remove_completed_skips_ready_meals(
         ("delete", f"/items/{RICE}", None),
         ("get", "/lists", None),
     ]
+
+
+async def test_remove_one_ready_meal_day_singular(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+) -> None:
+    """One Ready Meals day left: the message is singular."""
+    mock_lists(aioclient_mock, lists_json)
+    aioclient_mock.delete(
+        f"{API}/items/{MONDAY}", status=422, json={"error": "ready_meal_child_readonly"}
+    )
+    with pytest.raises(ServiceValidationError) as exc:
+        await hass.services.async_call(
+            TODO_DOMAIN,
+            "remove_item",
+            {"item": [MONDAY]},
+            target={ATTR_ENTITY_ID: todo_entity_id(hass, "WW")},
+            blocking=True,
+        )
+    assert exc.value.translation_key == "ready_meal_day_not_removed"
+    assert str(exc.value) == (
+        "1 Ready Meals day wasn't removed: Ready Meals · Monday 7th. "
+        "Ready Meals days can only be removed in Two Spoons"
+    )
 
 
 async def test_delete_already_gone_is_fine(
