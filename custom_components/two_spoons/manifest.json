@@ -1,7 +1,13 @@
 {
   "domain": "two_spoons",
   "name": "Two Spoons",
-  "codeowners": ["@4b4vjcgww6-ui"],
+  "categories": [
+    "productivity_information.shopping_groceries",
+    "productivity_information.calendars_todos"
+  ],
+  "codeowners": [
+    "@4b4vjcgww6-ui"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/4b4vjcgww6-ui/ha-two-spoons",
