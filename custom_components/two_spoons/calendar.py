@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .api import Meals
+from .api import MealNight, Meals
 from .coordinator import TwoSpoonsConfigEntry, TwoSpoonsCoordinator
 from .entity import TwoSpoonsEntity
 
@@ -31,10 +31,17 @@ async def async_setup_entry(
     async_add_entities([TwoSpoonsMealsCalendar(coordinator, tz or dt_util.get_default_time_zone())])
 
 
-def _description(kind: str | None, method: str | None, prep_note: str | None) -> str | None:
+def _description(night: MealNight) -> str | None:
+    """Fixed lines, each only when set: kind, method, temp, cook, note."""
     lines = [
         f"{key}: {value}"
-        for key, value in (("kind", kind), ("method", method), ("prep", prep_note))
+        for key, value in (
+            ("kind", night.kind),
+            ("method", night.cook_method),
+            ("temp", None if night.oven_temp_c is None else f"{night.oven_temp_c}°C"),
+            ("cook", None if night.cook_mins is None else f"{night.cook_mins} min"),
+            ("note", night.note),
+        )
         if value
     ]
     return "\n".join(lines) or None
@@ -56,7 +63,7 @@ def meal_events(meals: Meals, today: str) -> tuple[list[CalendarEvent], Calendar
             start=start,
             end=start + timedelta(days=1),
             summary=night.label,
-            description=_description(night.kind, night.method, night.prep_note),
+            description=_description(night),
             uid=f"dinner-{night.date}",
         )
         events.append(event)

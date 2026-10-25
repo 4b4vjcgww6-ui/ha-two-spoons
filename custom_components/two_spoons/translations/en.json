@@ -153,6 +153,43 @@
             "name": "Week start"
           }
         }
+      },
+      "tonight": {
+        "name": "Tonight",
+        "state_attributes": {
+          "kind": {
+            "name": "Kind"
+          },
+          "cook_method": {
+            "name": "Cook method"
+          },
+          "oven_temp_c": {
+            "name": "Oven temperature"
+          },
+          "cook_mins": {
+            "name": "Cook time"
+          },
+          "note": {
+            "name": "Note"
+          },
+          "bought": {
+            "name": "Bought"
+          },
+          "details_needed": {
+            "name": "Details needed"
+          },
+          "date": {
+            "name": "Date"
+          }
+        }
+      },
+      "ready_meals_needing_details": {
+        "name": "Ready meals needing details",
+        "state_attributes": {
+          "nights": {
+            "name": "Nights"
+          }
+        }
       }
     }
   },

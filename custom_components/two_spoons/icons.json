@@ -3,5 +3,15 @@
     "refresh": {
       "service": "mdi:refresh"
     }
+  },
+  "entity": {
+    "sensor": {
+      "tonight": {
+        "default": "mdi:silverware-fork-knife"
+      },
+      "ready_meals_needing_details": {
+        "default": "mdi:clipboard-edit-outline"
+      }
+    }
   }
 }

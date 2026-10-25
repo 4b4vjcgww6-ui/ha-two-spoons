@@ -14,14 +14,25 @@ and remove items from Home Assistant, Assist and automations.
 - **A "Meals" calendar** with one all-day event per planned dinner for this
   week and next, plus weekend baking across Saturday and Sunday. The
   calendar's state is tonight's dinner (off when nothing is planned).
-  Event descriptions list `kind:`, and `method:` / `prep:` when the recipe has
-  them. Read-only.
+  Event descriptions have one line per detail that's set, always in this
+  order: `kind:`, then for ready meals `method:`, `temp:` (°C), `cook:` (min)
+  and `note:`. A ready meal's event shows its name once it's filled in.
+  Read-only.
 - **A "Week status" sensor**: `not_started` (no dinners planned in the
   shopping week, or no shopping week yet), `partial` (1–6) or `planned` (7),
   with the counts and tonight's dinner as attributes.
 - **A "Woolies order" sensor** for the shopping week's click & collect order:
   `not_placed`, `exported`, `placed`, or `pickup_today` once placed on
   collection day (Perth time), with order/collection dates and item counts.
+- **A "Tonight" sensor** for automations: the state is tonight's dinner, or
+  `Not planned`. Attributes: `kind`, `cook_method`, `oven_temp_c`,
+  `cook_mins`, `note`, `bought` (its Ready Meals item is ticked),
+  `details_needed` and `date`. "Tonight" is the app's date in Perth, so the
+  state moves on at the first poll after midnight there.
+- **A "Ready meals needing details" sensor**: how many ready-meal nights the
+  app says still need details (tonight, or a later night that's been bought,
+  with the name or method missing, or an oven night missing its temperature
+  or cook time). The `nights` attribute lists each one's `date` and `label`.
 - **`two_spoons.refresh`**, an action that fetches everything straight away,
   for example when you arrive at a store.
 - New stores appear automatically. A store that's removed or made inactive in

@@ -81,15 +81,25 @@ class ShoppingLists:
 
 @dataclass(frozen=True, slots=True)
 class MealNight:
-    """One night from GET /meals. Unplanned nights have kind and label None."""
+    """One night from GET /meals. Unplanned nights have kind and label None.
+
+    The ready-meal details (name, cook method, oven temp, cook time, note)
+    are filled in after shopping and are None until then, and on other
+    kinds of night. `label` is the name once it's set.
+    """
 
     date: str
     week_start: str
     planned: bool
     kind: str | None
     label: str | None
-    method: str | None
-    prep_note: str | None
+    name: str | None
+    cook_method: str | None
+    oven_temp_c: int | None
+    cook_mins: int | None
+    note: str | None
+    bought: bool  # the night's Ready Meals item is ticked
+    details_needed: bool  # today, or later and bought, with details missing
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,26 +198,29 @@ def _parse_lists(body: Any) -> ShoppingLists:
 
 def _parse_meals(body: Any) -> Meals:
     try:
-        nights = []
-        for n in body["nights"]:
-            recipe = n.get("recipe") or {}
-            nights.append(
-                MealNight(
-                    date=n["date"],
-                    week_start=n["weekStart"],
-                    planned=bool(n["planned"]),
-                    kind=n["kind"],
-                    label=n["label"],
-                    method=recipe.get("method"),
-                    prep_note=recipe.get("prepNote"),
-                )
+        nights = tuple(
+            MealNight(
+                date=n["date"],
+                week_start=n["weekStart"],
+                planned=bool(n["planned"]),
+                kind=n["kind"],
+                label=n["label"],
+                name=n["name"],
+                cook_method=n["cookMethod"],
+                oven_temp_c=n["ovenTempC"],
+                cook_mins=n["cookMins"],
+                note=n["note"],
+                bought=bool(n["bought"]),
+                details_needed=bool(n["detailsNeeded"]),
             )
+            for n in body["nights"]
+        )
         return Meals(
             today=body["today"],
             timezone=body["timezone"],
             shopping_week_start=body["shoppingWeekStart"],
             version=body["version"],
-            nights=tuple(nights),
+            nights=nights,
             baking=tuple(
                 MealBaking(week_start=b["weekStart"], label=b["label"]) for b in body["baking"]
             ),

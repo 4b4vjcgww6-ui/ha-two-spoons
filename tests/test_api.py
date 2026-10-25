@@ -96,6 +96,51 @@ async def test_get_lists_bad_shape(
         await client.async_get_lists()
 
 
+async def test_get_meals_ready_meal_details(
+    client: TwoSpoonsClient, aioclient_mock: AiohttpClientMocker, meals_json: dict[str, Any]
+) -> None:
+    """Each night carries the ready-meal details, bought and detailsNeeded."""
+    meals_json["nights"][2].update(
+        label="Beef lasagne",
+        name="Beef lasagne",
+        cookMethod="oven",
+        ovenTempC=180,
+        cookMins=45,
+        note="Foil on",
+        bought=True,
+    )
+    aioclient_mock.get(f"{API}/meals", json=meals_json)
+    meals = await client.async_get_meals()
+    monday, tuesday = meals.nights[2], meals.nights[3]
+    assert (monday.label, monday.name, monday.cook_method) == (
+        "Beef lasagne",
+        "Beef lasagne",
+        "oven",
+    )
+    assert (monday.oven_temp_c, monday.cook_mins, monday.note) == (180, 45, "Foil on")
+    assert (monday.bought, monday.details_needed) == (True, False)
+    assert (tuesday.name, tuesday.cook_method, tuesday.bought, tuesday.details_needed) == (
+        None,
+        None,
+        True,
+        True,
+    )
+
+
+@pytest.mark.parametrize("field", ["name", "cookMethod", "bought", "detailsNeeded"])
+async def test_get_meals_missing_field(
+    client: TwoSpoonsClient,
+    aioclient_mock: AiohttpClientMocker,
+    meals_json: dict[str, Any],
+    field: str,
+) -> None:
+    """A night without the 0.3 fields (an older app) is a connection error."""
+    del meals_json["nights"][0][field]
+    aioclient_mock.get(f"{API}/meals", json=meals_json)
+    with pytest.raises(TwoSpoonsConnectionError):
+        await client.async_get_meals()
+
+
 async def test_write_bodies(client: TwoSpoonsClient, aioclient_mock: AiohttpClientMocker) -> None:
     """POST, PATCH and DELETE send what the API expects."""
     aioclient_mock.post(f"{API}/items", status=201, json={"merged": False})

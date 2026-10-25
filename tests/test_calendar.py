@@ -189,7 +189,49 @@ async def test_events_range_filter(
     assert [e["summary"] for e in events] == ["Baking: Lemon cake", "Ready Meal"]
 
 
-async def test_method_and_prep_lines(
+@pytest.mark.parametrize(
+    ("details", "expected"),
+    [
+        (
+            {"cookMethod": "oven", "ovenTempC": 180, "cookMins": 45, "note": "Foil on"},
+            "kind: ready_meal\nmethod: oven\ntemp: 180°C\ncook: 45 min\nnote: Foil on",
+        ),
+        ({"cookMethod": "microwave"}, "kind: ready_meal\nmethod: microwave"),
+        (
+            {"cookMethod": "air_fryer", "cookMins": 12},
+            "kind: ready_meal\nmethod: air_fryer\ncook: 12 min",
+        ),
+        ({"note": "Shake halfway"}, "kind: ready_meal\nnote: Shake halfway"),
+        ({}, "kind: ready_meal"),
+    ],
+)
+async def test_ready_meal_description_lines(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+    details: dict[str, Any],
+    expected: str,
+) -> None:
+    """Fixed lines, each only when set: kind, method, temp, cook, note. Summary is the label."""
+    meals_json["nights"][2].update(label="Beef lasagne", name="Beef lasagne", **details)
+    entity_id = await setup_at(
+        hass,
+        mock_entry,
+        aioclient_mock,
+        freezer,
+        lists_json,
+        datetime(2030, 1, 7, 18, 0, tzinfo=PERTH),
+        meals=meals_json,
+    )
+    state = hass.states.get(entity_id)
+    assert state.attributes["message"] == "Beef lasagne"
+    assert state.attributes["description"] == expected
+
+
+async def test_no_prep_line(
     hass: HomeAssistant,
     mock_entry: MockConfigEntry,
     aioclient_mock: AiohttpClientMocker,
@@ -197,9 +239,8 @@ async def test_method_and_prep_lines(
     lists_json: dict[str, Any],
     meals_json: dict[str, Any],
 ) -> None:
-    """Description shows only the lines that have values, in a fixed order."""
-    meals_json["nights"][0]["recipe"]["method"] = "slow_cooker"
-    meals_json["nights"][0]["recipe"]["prepNote"] = "Chicken out of the freezer"
+    """Recipe method/prepNote are no longer read, even if a response still has them."""
+    meals_json["nights"][0]["recipe"].update(method="slow_cooker", prepNote="Thaw the chicken")
     entity_id = await setup_at(
         hass,
         mock_entry,
@@ -209,17 +250,7 @@ async def test_method_and_prep_lines(
         datetime(2030, 1, 5, 18, 0, tzinfo=PERTH),
         meals=meals_json,
     )
-    assert hass.states.get(entity_id).attributes["description"] == (
-        "kind: recipe\nmethod: slow_cooker\nprep: Chicken out of the freezer"
-    )
-
-    meals_json["nights"][0]["recipe"]["method"] = None
-    mock_lists(aioclient_mock, lists_json, meals_body=meals_json)
-    await mock_entry.runtime_data.async_refresh()
-    await hass.async_block_till_done()
-    assert hass.states.get(entity_id).attributes["description"] == (
-        "kind: recipe\nprep: Chicken out of the freezer"
-    )
+    assert hass.states.get(entity_id).attributes["description"] == "kind: recipe"
 
 
 async def test_next_week_not_created(

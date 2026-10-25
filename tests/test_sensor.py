@@ -256,3 +256,279 @@ async def test_state_names_translated(
         "partial": "Partly planned",
         "planned": "Planned",
     }
+
+
+async def setup_meals(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> None:
+    """Set up with a given /meals body (or meals kwargs)."""
+    mock_lists(aioclient_mock, lists_json, meals_body=meals, **kwargs)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+TONIGHT_KEYS = {
+    "kind",
+    "cook_method",
+    "oven_temp_c",
+    "cook_mins",
+    "note",
+    "bought",
+    "details_needed",
+    "date",
+}
+
+LASAGNE = {
+    "label": "Beef lasagne",
+    "name": "Beef lasagne",
+    "cookMethod": "oven",
+    "ovenTempC": 180,
+    "cookMins": 45,
+    "note": "Foil on",
+    "bought": True,
+}
+
+
+# ── Tonight ──────────────────────────────────────────────────────────────────
+
+
+async def test_tonight_recipe_night(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+) -> None:
+    """A recipe night: its label, kind recipe, no ready-meal details."""
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json)
+    entity_id = sensor_id(hass, mock_entry, "tonight")
+    assert entity_id == "sensor.two_spoons_tonight"
+    state = hass.states.get(entity_id)
+    assert state.state == "Roast chicken"
+    assert state.attributes[ATTR_FRIENDLY_NAME] == "Two Spoons Tonight"
+    assert "device_class" not in state.attributes
+    assert {k: state.attributes[k] for k in TONIGHT_KEYS} == {
+        "kind": "recipe",
+        "cook_method": None,
+        "oven_temp_c": None,
+        "cook_mins": None,
+        "note": None,
+        "bought": False,
+        "details_needed": False,
+        "date": "2030-01-05",
+    }
+
+
+async def test_tonight_ready_meal_with_details(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+) -> None:
+    """A filled-in ready meal tonight: the name, and every detail as attributes."""
+    meals_json["today"] = "2030-01-07"
+    meals_json["nights"][2].update(LASAGNE)
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    state = hass.states.get(sensor_id(hass, mock_entry, "tonight"))
+    assert state.state == "Beef lasagne"
+    assert {k: state.attributes[k] for k in TONIGHT_KEYS} == {
+        "kind": "ready_meal",
+        "cook_method": "oven",
+        "oven_temp_c": 180,
+        "cook_mins": 45,
+        "note": "Foil on",
+        "bought": True,
+        "details_needed": False,
+        "date": "2030-01-07",
+    }
+
+
+async def test_tonight_ready_meal_needing_details(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+) -> None:
+    """Bought, no details yet: "Ready Meal", details_needed true."""
+    meals_json["today"] = "2030-01-08"
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    state = hass.states.get(sensor_id(hass, mock_entry, "tonight"))
+    assert state.state == "Ready Meal"
+    assert state.attributes["kind"] == "ready_meal"
+    assert state.attributes["cook_method"] is None
+    assert state.attributes["bought"] is True
+    assert state.attributes["details_needed"] is True
+
+
+@pytest.mark.parametrize(
+    "today",
+    [
+        "2030-01-06",  # in the window, nothing planned
+        "2030-01-19",  # past the window's last night
+        "2030-01-04",  # before its first night
+    ],
+)
+async def test_tonight_not_planned(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+    today: str,
+) -> None:
+    """No planned night tonight → "Not planned", empty details, flags false."""
+    meals_json["today"] = today
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    state = hass.states.get(sensor_id(hass, mock_entry, "tonight"))
+    assert state.state == "Not planned"
+    assert {k: state.attributes[k] for k in TONIGHT_KEYS} == {
+        "kind": None,
+        "cook_method": None,
+        "oven_temp_c": None,
+        "cook_mins": None,
+        "note": None,
+        "bought": False,
+        "details_needed": False,
+        "date": today,
+    }
+
+
+async def test_tonight_follows_the_apps_today(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+) -> None:
+    """When /meals moves on to the next day, the next poll shows that night."""
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    entity_id = sensor_id(hass, mock_entry, "tonight")
+    assert hass.states.get(entity_id).state == "Roast chicken"
+
+    meals_json["today"] = "2030-01-06"
+    mock_lists(aioclient_mock, lists_json, meals_body=meals_json)
+    await mock_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(entity_id).state == "Not planned"
+
+
+# ── Ready meals needing details ──────────────────────────────────────────────
+
+
+async def test_needing_details_from_fixture(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+) -> None:
+    """One bought night without details → 1, listed with its date and label."""
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json)
+    entity_id = sensor_id(hass, mock_entry, "ready_meals_needing_details")
+    assert entity_id == "sensor.two_spoons_ready_meals_needing_details"
+    state = hass.states.get(entity_id)
+    assert state.state == "1"
+    assert state.attributes[ATTR_FRIENDLY_NAME] == "Two Spoons Ready meals needing details"
+    assert state.attributes["nights"] == [{"date": "2030-01-08", "label": "Ready Meal"}]
+
+
+async def test_needing_details_none(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+) -> None:
+    """No night flagged → 0 and an empty list."""
+    for night in meals_json["nights"]:
+        night["detailsNeeded"] = False
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    state = hass.states.get(sensor_id(hass, mock_entry, "ready_meals_needing_details"))
+    assert state.state == "0"
+    assert state.attributes["nights"] == []
+
+
+async def test_needing_details_counts_only_flagged_nights_in_date_order(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    meals_json: dict[str, Any],
+) -> None:
+    """The count is the app's detailsNeeded flags (bought alone doesn't count)."""
+    nights = meals_json["nights"]
+    nights[2].update(LASAGNE, detailsNeeded=False)  # filled in
+    nights[3].update(detailsNeeded=True)  # bought, empty
+    nights[4].update(label="Pork dumplings", name="Pork dumplings", detailsNeeded=True)  # no method
+    nights[5].update(bought=True, detailsNeeded=False)
+    meals_json["nights"] = list(reversed(nights))  # order comes from the dates
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json, meals_json)
+    state = hass.states.get(sensor_id(hass, mock_entry, "ready_meals_needing_details"))
+    assert state.state == "2"
+    assert state.attributes["nights"] == [
+        {"date": "2030-01-08", "label": "Ready Meal"},
+        {"date": "2030-01-09", "label": "Pork dumplings"},
+    ]
+
+
+# ── Both meals sensors without /meals ────────────────────────────────────────
+
+
+@pytest.mark.parametrize("key", ["tonight", "ready_meals_needing_details"])
+async def test_meals_sensors_unavailable_on_409(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    key: str,
+) -> None:
+    """/meals 409 (no shopping week) → unavailable; the other sensors still work."""
+    await setup_meals(
+        hass,
+        mock_entry,
+        aioclient_mock,
+        lists_json,
+        meals={"error": "no_shopping_week"},
+        meals_kwargs={"status": 409},
+    )
+    assert hass.states.get(sensor_id(hass, mock_entry, key)).state == STATE_UNAVAILABLE
+    assert hass.states.get(sensor_id(hass, mock_entry, "week_status")).state != STATE_UNAVAILABLE
+
+
+@pytest.mark.parametrize("key", ["tonight", "ready_meals_needing_details"])
+async def test_meals_sensors_unavailable_when_poll_fails(
+    hass: HomeAssistant,
+    mock_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    lists_json: dict[str, Any],
+    key: str,
+) -> None:
+    """A failed poll makes them unavailable, and the next good one brings them back."""
+    await setup_meals(hass, mock_entry, aioclient_mock, lists_json)
+    entity_id = sensor_id(hass, mock_entry, key)
+    mock_lists(aioclient_mock, lists_json, meals_kwargs={"status": 500})
+    await mock_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
+
+    mock_lists(aioclient_mock, lists_json)
+    await mock_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get(entity_id).state != STATE_UNAVAILABLE
+
+
+async def test_meals_sensor_names_translated(
+    hass: HomeAssistant, setup_integration: MockConfigEntry
+) -> None:
+    """Both new sensors and their attributes have English names."""
+    t = await async_get_translations(hass, "en", "entity", [DOMAIN])
+    prefix = f"component.{DOMAIN}.entity.sensor"
+    assert t[f"{prefix}.tonight.name"] == "Tonight"
+    assert t[f"{prefix}.ready_meals_needing_details.name"] == "Ready meals needing details"
+    assert all(f"{prefix}.tonight.state_attributes.{k}.name" in t for k in TONIGHT_KEYS)
+    assert f"{prefix}.ready_meals_needing_details.state_attributes.nights.name" in t
