@@ -33,7 +33,7 @@ async def test_user_agent_has_version(
 ) -> None:
     """User-Agent is HomeAssistant-TwoSpoons/<manifest version>."""
     _, _, _, headers = aioclient_mock.mock_calls[0]
-    assert headers["User-Agent"] == "HomeAssistant-TwoSpoons/0.3.0"
+    assert headers["User-Agent"] == "HomeAssistant-TwoSpoons/0.4.0"
 
 
 async def test_setup_401_starts_reauth(

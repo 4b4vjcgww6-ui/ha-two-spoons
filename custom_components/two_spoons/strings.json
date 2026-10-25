@@ -88,12 +88,60 @@
     },
     "refresh_failed": {
       "message": "Couldn't refresh Two Spoons."
+    },
+    "invalid_item": {
+      "message": "Two Spoons couldn't add that item. Try saying it again, more briefly"
+    },
+    "unknown_store": {
+      "message": "Two Spoons has no store with the code {store}. The codes are {codes}"
+    },
+    "unknown_store_code": {
+      "message": "Two Spoons has no store with the code {store}"
+    },
+    "choose_entry": {
+      "message": "More than one Two Spoons is set up. Choose one with config_entry_id"
+    },
+    "add_item_invalid_auth": {
+      "message": "Two Spoons rejected Home Assistant's token, so nothing was added. Re-enter the token in Home Assistant"
+    },
+    "add_item_blocked_by_firewall": {
+      "message": "Two Spoons is blocking Home Assistant for now, so nothing was added. Try again later"
+    },
+    "add_item_no_shopping_week": {
+      "message": "Two Spoons has no shopping week right now, so nothing was added"
+    },
+    "add_item_timeout": {
+      "message": "Two Spoons took too long to answer. The item may still have been added, so check the list before trying again"
+    },
+    "add_item_cannot_connect": {
+      "message": "Something went wrong talking to Two Spoons. Check the list to see whether the item was added"
+    },
+    "add_item_rejected": {
+      "message": "Two Spoons couldn't add that item ({code})"
     }
   },
   "services": {
     "refresh": {
       "name": "Refresh",
       "description": "Fetches the shopping lists from Two Spoons now."
+    },
+    "add_item": {
+      "name": "Add item",
+      "description": "Adds an item to a Two Spoons list, the way Quick Add does. With no store, Two Spoons picks one from the text.",
+      "fields": {
+        "item": {
+          "name": "Item",
+          "description": "The item as spoken, for example \"2 litres of milk\"."
+        },
+        "store": {
+          "name": "Store",
+          "description": "A store code such as FP or WW. Leave empty to let Two Spoons choose."
+        },
+        "config_entry_id": {
+          "name": "Two Spoons entry",
+          "description": "Only needed when more than one Two Spoons is set up."
+        }
+      }
     }
   },
   "entity": {

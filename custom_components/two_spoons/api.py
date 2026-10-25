@@ -28,6 +28,10 @@ class TwoSpoonsConnectionError(TwoSpoonsError):
     """Network failure, timeout, server error or unreadable response."""
 
 
+class TwoSpoonsTimeoutError(TwoSpoonsConnectionError):
+    """No answer within REQUEST_TIMEOUT (a write may still have happened)."""
+
+
 class TwoSpoonsAuthError(TwoSpoonsError):
     """The token was rejected (HTTP 401)."""
 
@@ -77,6 +81,16 @@ class ShoppingLists:
     week_start: str
     version: str
     stores: dict[str, StoreList]
+
+
+@dataclass(frozen=True, slots=True)
+class AddedItem:
+    """POST /items: the resulting item, which is the existing one if merged."""
+
+    summary: str
+    store_code: str | None
+    store_name: str
+    merged: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +210,18 @@ def _parse_lists(body: Any) -> ShoppingLists:
         raise TwoSpoonsConnectionError("unexpected /lists response") from err
 
 
+def _parse_added(body: Any) -> AddedItem:
+    try:
+        return AddedItem(
+            summary=body["item"]["summary"],
+            store_code=body["store"]["code"],
+            store_name=body["store"]["name"],
+            merged=bool(body["merged"]),
+        )
+    except (KeyError, TypeError) as err:
+        raise TwoSpoonsConnectionError("unexpected /items response") from err
+
+
 def _parse_meals(body: Any) -> Meals:
     try:
         nights = tuple(
@@ -285,7 +311,7 @@ class TwoSpoonsClient:
                         body = None
         except TimeoutError as err:
             _LOGGER.debug("%s %s timed out", method, path)
-            raise TwoSpoonsConnectionError("timeout") from err
+            raise TwoSpoonsTimeoutError("timeout") from err
         except aiohttp.ClientError as err:
             _LOGGER.debug("%s %s failed: %s", method, path, type(err).__name__)
             raise TwoSpoonsConnectionError(type(err).__name__) from err
@@ -324,6 +350,13 @@ class TwoSpoonsClient:
     async def async_create_item(self, store_code: str, text: str) -> None:
         """POST /items into one store (may merge into an existing item)."""
         await self._request("POST", "/items", {"text": text, "store": store_code})
+
+    async def async_add_item(self, text: str, store_code: str | None = None) -> AddedItem:
+        """POST /items; with no store, the API picks one from the text."""
+        payload: dict[str, str] = {"text": text}
+        if store_code is not None:
+            payload["store"] = store_code
+        return _parse_added(await self._request("POST", "/items", payload))
 
     async def async_update_item(self, item_id: str, *, completed: bool, text: str) -> None:
         """PATCH /items/:id. The API treats an unchanged text as no rename."""

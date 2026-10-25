@@ -23,3 +23,7 @@ STORE_ALIASES: Final[dict[str, str]] = {"WW": "Woolworths"}
 # API error codes the integration reacts to.
 ERR_READ_ONLY: Final = "ready_meal_child_readonly"
 ERR_NOT_FOUND: Final = "not_found"
+ERR_UNKNOWN_STORE: Final = "unknown_store"
+
+# The API's limit on an item's text (POST /items), checked before sending.
+MAX_ITEM_TEXT: Final = 200

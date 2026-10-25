@@ -35,6 +35,11 @@ and remove items from Home Assistant, Assist and automations.
   or cook time). The `nights` attribute lists each one's `date` and `label`.
 - **`two_spoons.refresh`**, an action that fetches everything straight away,
   for example when you arrive at a store.
+- **`two_spoons.add_item`**, an action that adds free text the way Quick Add
+  does (`item`, plus an optional `store` code; with no store, Two Spoons picks
+  one). It can return the item as the list shows it, the store it went to and
+  whether it merged into an existing item. Its errors are worded to be read
+  aloud by a voice assistant.
 - New stores appear automatically. A store that's removed or made inactive in
   Two Spoons shows as unavailable; its list is never deleted for you.
 - The `WW` store is also known to Assist as "Woolworths".
@@ -83,6 +88,29 @@ automation:
     actions:
       - action: two_spoons.refresh
 ```
+
+## Example: add an item and say where it went
+
+```yaml
+script:
+  add_to_shopping:
+    fields:
+      item:
+        selector:
+          text:
+    sequence:
+      - action: two_spoons.add_item
+        data:
+          item: "{{ item }}"
+        response_variable: added
+      - action: notify.notify
+        data:
+          message: >-
+            {{ added.summary }} is on the {{ added.store_name }} list{{
+            ' (merged)' if added.merged }}.
+```
+
+`config_entry_id` is only needed if more than one Two Spoons site is set up.
 
 ## Troubleshooting
 

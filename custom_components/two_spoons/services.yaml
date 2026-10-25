@@ -1,1 +1,16 @@
 refresh:
+add_item:
+  fields:
+    item:
+      required: true
+      example: "2 litres of milk"
+      selector:
+        text:
+    store:
+      example: "FP"
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: two_spoons

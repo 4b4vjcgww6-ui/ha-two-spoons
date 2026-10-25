@@ -2,6 +2,9 @@
   "services": {
     "refresh": {
       "service": "mdi:refresh"
+    },
+    "add_item": {
+      "service": "mdi:cart-plus"
     }
   },
   "entity": {
